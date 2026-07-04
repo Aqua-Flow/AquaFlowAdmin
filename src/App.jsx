@@ -1,5 +1,4 @@
-import { useEffect } from "react";
-import { Routes, Route, useNavigate } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { Box, CircularProgress } from "@mui/material";
 import { useAuth } from "./context/AuthContext";
 import Layout from "./components/Layout";
@@ -22,74 +21,33 @@ function Splash() {
   );
 }
 
-function Redirect({ to }) {
-  const navigate = useNavigate();
-  useEffect(() => { navigate(to, { replace: true }); }, [navigate, to]);
-  return null;
-}
-
 function Guard({ children, admin, platform, shell }) {
   const { session, loading, isStaff, isAdmin, isPlatformAdmin } = useAuth();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (loading) return;
-    if (!session || (!isStaff && !isPlatformAdmin)) {
-      navigate("/login", { replace: true });
-      return;
-    }
-    if (shell) return;
-    if (platform && !isPlatformAdmin) {
-      navigate("/", { replace: true });
-      return;
-    }
-    if (!platform && isPlatformAdmin) {
-      navigate("/tenants", { replace: true });
-      return;
-    }
-    if (admin && !isAdmin) {
-      navigate("/", { replace: true });
-    }
-  }, [loading, session, isStaff, isAdmin, isPlatformAdmin, platform, admin, shell, navigate]);
 
   if (loading) return <Splash />;
-  if (!session || (!isStaff && !isPlatformAdmin)) return null;
+  if (!session || (!isStaff && !isPlatformAdmin)) return <Navigate to="/login" replace />;
   if (shell) return children;
-  if (platform && !isPlatformAdmin) return null;
-  if (!platform && isPlatformAdmin) return null;
-  if (admin && !isAdmin) return null;
+  if (platform && !isPlatformAdmin) return <Navigate to="/" replace />;
+  if (!platform && isPlatformAdmin) return <Navigate to="/tenants" replace />;
+  if (admin && !isAdmin) return <Navigate to="/" replace />;
   return children;
 }
 
 function Home() {
   const { isPlatformAdmin } = useAuth();
-  const navigate = useNavigate();
 
-  useEffect(() => {
-    if (isPlatformAdmin) {
-      navigate("/tenants", { replace: true });
-    }
-  }, [isPlatformAdmin, navigate]);
-
-  if (isPlatformAdmin) return null;
+  if (isPlatformAdmin) return <Navigate to="/tenants" replace />;
   return <Dashboard />;
 }
 
 export default function App() {
   const { session, loading } = useAuth();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!loading && session) {
-      // no-op: just here to prevent any initial flash redirect
-    }
-  }, [loading, session, navigate]);
 
   if (loading) return <Splash />;
 
   return (
     <Routes>
-      <Route path="/login" element={session ? <Redirect to="/" /> : <Login />} />
+      <Route path="/login" element={session ? <Navigate to="/" replace /> : <Login />} />
       <Route
         element={
           <Guard shell>
@@ -97,7 +55,7 @@ export default function App() {
           </Guard>
         }
       >
-        <Route path="/" element={<Home />} />
+        <Route index element={<Home />} />
         <Route path="/tenants" element={<Guard platform><Tenants /></Guard>} />
         <Route path="/customers" element={<Guard><Customers /></Guard>} />
         <Route path="/deliveries" element={<Guard><Deliveries /></Guard>} />
@@ -107,7 +65,7 @@ export default function App() {
         <Route path="/staff" element={<Guard admin><Staff /></Guard>} />
         <Route path="/settings" element={<Guard admin><Settings /></Guard>} />
       </Route>
-      <Route path="*" element={<Redirect to="/" />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
