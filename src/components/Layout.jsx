@@ -12,6 +12,7 @@ import PeopleIcon from "@mui/icons-material/People";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import SupportAgentIcon from "@mui/icons-material/SupportAgent";
 import PaymentsIcon from "@mui/icons-material/Payments";
+import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import CampaignIcon from "@mui/icons-material/Campaign";
 import BadgeIcon from "@mui/icons-material/Badge";
 import SettingsIcon from "@mui/icons-material/Settings";
@@ -29,6 +30,7 @@ const NAV = [
   { to: "/deliveries", label: "Deliveries & Check-ins", icon: <LocalShippingIcon /> },
   { to: "/requests", label: "Requests", icon: <SupportAgentIcon /> },
   { to: "/payments", label: "Payments", icon: <PaymentsIcon /> },
+  { to: "/dues", label: "Dues", icon: <AccountBalanceWalletIcon /> },
   { to: "/announcements", label: "Announcements", icon: <CampaignIcon /> },
   { to: "/staff", label: "Staff", icon: <BadgeIcon />, admin: true },
   { to: "/settings", label: "Settings", icon: <SettingsIcon />, admin: true },

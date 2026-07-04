@@ -7,6 +7,7 @@ import WaterDropIcon from "@mui/icons-material/WaterDrop";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import ReportProblemIcon from "@mui/icons-material/ReportProblem";
 import CurrencyRupeeIcon from "@mui/icons-material/CurrencyRupee";
+import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import SupportAgentIcon from "@mui/icons-material/SupportAgent";
 import StatCard from "../components/StatCard";
 import { supabase } from "../lib/supabase";
@@ -19,6 +20,7 @@ export default function Dashboard() {
   const { isPlatformAdmin } = useAuth();
   const { tenantId } = useTenant();
   const [stats, setStats] = useState(null);
+  const [duesTotal, setDuesTotal] = useState(0);
   const [recon, setRecon] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -30,6 +32,11 @@ export default function Dashboard() {
     (async () => {
       const { data } = await supabase.rpc("get_dashboard_stats", { p_tenant_id: tenantId });
       setStats(data);
+
+      let dq = supabase.from("customer_dues").select("amount_due");
+      dq = addTenantFilter(dq, isPlatformAdmin, tenantId);
+      const { data: dues } = await dq;
+      setDuesTotal((dues ?? []).reduce((s, r) => s + Number(r.amount_due), 0));
 
       const today = new Date().toISOString().slice(0, 10);
       let q = supabase
@@ -95,6 +102,10 @@ export default function Dashboard() {
             <Grid item xs={12} sm={6} md={4}>
               <StatCard label="Revenue this month" value={`₹${Number(s.revenue_month ?? 0).toLocaleString("en-IN")}`}
                 tone="success" icon={<CurrencyRupeeIcon />} />
+            </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <StatCard label="Pending dues" value={`₹${duesTotal.toLocaleString("en-IN")}`}
+                tone="error" icon={<AccountBalanceWalletIcon />} hint="across all customers" />
             </Grid>
           </>
         )}

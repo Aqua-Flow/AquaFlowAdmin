@@ -9,6 +9,7 @@ import Customers from "./pages/Customers";
 import Deliveries from "./pages/Deliveries";
 import Requests from "./pages/Requests";
 import Payments from "./pages/Payments";
+import Dues from "./pages/Dues";
 import Staff from "./pages/Staff";
 import Announcements from "./pages/Announcements";
 import Settings from "./pages/Settings";
@@ -79,6 +80,7 @@ export default function App() {
         <Route path="/deliveries" element={<Guard><Deliveries /></Guard>} />
         <Route path="/requests" element={<Guard><Requests /></Guard>} />
         <Route path="/payments" element={<Guard><Payments /></Guard>} />
+        <Route path="/dues" element={<Guard><Dues /></Guard>} />
         <Route path="/announcements" element={<Guard><Announcements /></Guard>} />
         <Route path="/staff" element={<Guard admin><Staff /></Guard>} />
         <Route path="/settings" element={<Guard admin><Settings /></Guard>} />
