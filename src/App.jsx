@@ -11,6 +11,7 @@ import Payments from "./pages/Payments";
 import Staff from "./pages/Staff";
 import Announcements from "./pages/Announcements";
 import Settings from "./pages/Settings";
+import Tenants from "./pages/Tenants";
 
 function Splash() {
   return (
@@ -20,13 +21,24 @@ function Splash() {
   );
 }
 
-function Guard({ children, admin }) {
-  const { session, profile, loading, isStaff, isAdmin } = useAuth();
+function Guard({ children, admin, platform, shell }) {
+  const { session, loading, isStaff, isAdmin, isPlatformAdmin } = useAuth();
   if (loading) return <Splash />;
   if (!session) return <Navigate to="/login" replace />;
-  if (!isStaff) return <Navigate to="/login" replace />;
+  if (!isStaff && !isPlatformAdmin) return <Navigate to="/login" replace />;
+  // The app shell only needs a logged-in user; per-page guards do the rest.
+  if (shell) return children;
+  // platform-only page (Tenants): only the platform admin
+  if (platform && !isPlatformAdmin) return <Navigate to="/" replace />;
+  // tenant pages: keep the platform admin out, send them to Tenants
+  if (!platform && isPlatformAdmin) return <Navigate to="/tenants" replace />;
   if (admin && !isAdmin) return <Navigate to="/" replace />;
   return children;
+}
+
+function Home() {
+  const { isPlatformAdmin } = useAuth();
+  return isPlatformAdmin ? <Navigate to="/tenants" replace /> : <Dashboard />;
 }
 
 export default function App() {
@@ -38,33 +50,20 @@ export default function App() {
       <Route path="/login" element={session ? <Navigate to="/" replace /> : <Login />} />
       <Route
         element={
-          <Guard>
+          <Guard shell>
             <Layout />
           </Guard>
         }
       >
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/customers" element={<Customers />} />
-        <Route path="/deliveries" element={<Deliveries />} />
-        <Route path="/requests" element={<Requests />} />
-        <Route path="/payments" element={<Payments />} />
-        <Route path="/announcements" element={<Announcements />} />
-        <Route
-          path="/staff"
-          element={
-            <Guard admin>
-              <Staff />
-            </Guard>
-          }
-        />
-        <Route
-          path="/settings"
-          element={
-            <Guard admin>
-              <Settings />
-            </Guard>
-          }
-        />
+        <Route path="/" element={<Home />} />
+        <Route path="/tenants" element={<Guard platform><Tenants /></Guard>} />
+        <Route path="/customers" element={<Guard><Customers /></Guard>} />
+        <Route path="/deliveries" element={<Guard><Deliveries /></Guard>} />
+        <Route path="/requests" element={<Guard><Requests /></Guard>} />
+        <Route path="/payments" element={<Guard><Payments /></Guard>} />
+        <Route path="/announcements" element={<Guard><Announcements /></Guard>} />
+        <Route path="/staff" element={<Guard admin><Staff /></Guard>} />
+        <Route path="/settings" element={<Guard admin><Settings /></Guard>} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

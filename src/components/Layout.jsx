@@ -15,12 +15,14 @@ import PaymentsIcon from "@mui/icons-material/Payments";
 import CampaignIcon from "@mui/icons-material/Campaign";
 import BadgeIcon from "@mui/icons-material/Badge";
 import SettingsIcon from "@mui/icons-material/Settings";
+import ApartmentIcon from "@mui/icons-material/Apartment";
 import WaterDropIcon from "@mui/icons-material/WaterDrop";
 import { useAuth } from "../context/AuthContext";
 
 const drawerWidth = 248;
 
 const NAV = [
+  { to: "/tenants", label: "Tenants", icon: <ApartmentIcon />, platformOnly: true },
   { to: "/", label: "Dashboard", icon: <DashboardIcon /> },
   { to: "/customers", label: "Customers", icon: <PeopleIcon /> },
   { to: "/deliveries", label: "Deliveries & Check-ins", icon: <LocalShippingIcon /> },
@@ -32,6 +34,7 @@ const NAV = [
 ];
 
 const ROLE_LABEL = {
+  platform_admin: "Platform Admin",
   super_admin: "Super Admin",
   admin: "Admin",
   lower_admin: "Delivery",
@@ -44,9 +47,11 @@ export default function Layout() {
   const [anchor, setAnchor] = useState(null);
   const nav = useNavigate();
   const loc = useLocation();
-  const { profile, isAdmin, signOut } = useAuth();
+  const { profile, isAdmin, isPlatformAdmin, signOut } = useAuth();
 
-  const items = NAV.filter((n) => !n.admin || isAdmin);
+  const items = NAV.filter((n) =>
+    isPlatformAdmin ? n.platformOnly : !n.platformOnly && (!n.admin || isAdmin)
+  );
 
   const drawer = (
     <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>

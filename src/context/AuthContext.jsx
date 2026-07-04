@@ -13,7 +13,7 @@ export function AuthProvider({ children }) {
     if (!userId) return setProfile(null);
     const { data } = await supabase
       .from("profiles")
-      .select("id, full_name, role, branch_id, phone")
+      .select("id, full_name, role, branch_id, tenant_id, phone")
       .eq("id", userId)
       .single();
     setProfile(data ?? null);
@@ -35,13 +35,14 @@ export function AuthProvider({ children }) {
   const signIn = (email, password) => supabase.auth.signInWithPassword({ email, password });
   const signOut = () => supabase.auth.signOut();
 
+  const isPlatformAdmin = profile?.role === "platform_admin";
   const isStaff = profile && ["super_admin", "admin", "lower_admin"].includes(profile.role);
   const isAdmin = profile && ["super_admin", "admin"].includes(profile.role);
   const isSuperAdmin = profile?.role === "super_admin";
 
   return (
     <AuthCtx.Provider
-      value={{ session, profile, loading, signIn, signOut, isStaff, isAdmin, isSuperAdmin }}
+      value={{ session, profile, loading, signIn, signOut, isStaff, isAdmin, isSuperAdmin, isPlatformAdmin }}
     >
       {children}
     </AuthCtx.Provider>
