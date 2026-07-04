@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Box, Button, CircularProgress, Typography } from "@mui/material";
 import { useAuth } from "./context/AuthContext";
@@ -61,6 +62,11 @@ function Home() {
 
 export default function App() {
   const { session, loading } = useAuth();
+  const { tenantName } = useTenant();
+
+  useEffect(() => {
+    document.title = tenantName ? `${tenantName} · Admin` : "Admin Portal";
+  }, [tenantName]);
 
   if (loading) return <Splash />;
 

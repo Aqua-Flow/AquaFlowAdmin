@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import {
-  Dialog, DialogTitle, DialogContent, DialogActions, Button, Box, Typography,
+  DialogTitle, DialogContent, DialogActions, Button, Box, Typography,
   TextField, Stack,
 } from "@mui/material";
+import Dialog from "./ResponsiveDialog";
+import { useTenant } from "../context/TenantContext";
 
 // Build a standard UPI payment intent string.
 // upi://pay?pa=VPA&pn=NAME&am=AMOUNT&cu=INR&tn=NOTE
@@ -18,10 +20,12 @@ export function buildUpiUri({ vpa, name, amount, note }) {
 }
 
 export default function UpiQrDialog({ open, onClose, vpa, payeeName, defaultAmount, customerName }) {
+  const { tenantName } = useTenant();
   const [amount, setAmount] = useState(defaultAmount ?? "");
   const [dataUrl, setDataUrl] = useState("");
 
-  const note = customerName ? `AquaFlow dues - ${customerName}` : "AquaFlow dues";
+  const brand = tenantName || "AquaFlow";
+  const note = customerName ? `${brand} dues - ${customerName}` : `${brand} dues`;
   const uri = vpa ? buildUpiUri({ vpa, name: payeeName, amount, note }) : "";
 
   useEffect(() => {

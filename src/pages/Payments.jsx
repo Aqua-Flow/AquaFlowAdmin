@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  Box, Typography, Card, Stack, Button, Dialog, DialogTitle, DialogContent,
+  Box, Typography, Card, Stack, Button, DialogTitle, DialogContent,
   DialogActions, TextField, MenuItem, Autocomplete, Snackbar, Chip,
 } from "@mui/material";
+import Dialog from "../components/ResponsiveDialog";
 import { DataGrid } from "@mui/x-data-grid";
 import AddIcon from "@mui/icons-material/Add";
 import DownloadIcon from "@mui/icons-material/Download";

@@ -1,4 +1,4 @@
-import { createTheme } from "@mui/material/styles";
+import { createTheme, responsiveFontSizes } from "@mui/material/styles";
 
 // Water business identity: deep marine navy surfaces + a bright aqua accent.
 // Kept as a proper MUI theme so every component inherits it.
@@ -36,4 +36,4 @@ const theme = createTheme({
   },
 });
 
-export default theme;
+export default responsiveFontSizes(theme);

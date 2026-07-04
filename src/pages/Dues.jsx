@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Box, Typography, Card, Stack, Button, Dialog, DialogTitle, DialogContent,
+  Box, Typography, Card, Stack, Button, DialogTitle, DialogContent,
   DialogActions, TextField, MenuItem, Alert, Chip, IconButton, Tooltip, Snackbar,
 } from "@mui/material";
+import Dialog from "../components/ResponsiveDialog";
 import { DataGrid } from "@mui/x-data-grid";
 import AddIcon from "@mui/icons-material/Add";
 import ReceiptIcon from "@mui/icons-material/Receipt";
@@ -189,8 +190,9 @@ export default function Dues() {
 
       {selected && (
         <Card ref={invoicesRef} sx={{ mt: 3 }}>
-          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ p: 2, pb: 0 }}>
-            <Typography variant="h6">Invoices — {selected.full_name}</Typography>
+          <Stack direction={{ xs: "column", sm: "row" }} alignItems={{ xs: "flex-start", sm: "center" }}
+            justifyContent="space-between" spacing={{ xs: 1, sm: 0 }} sx={{ p: 2, pb: 0 }}>
+            <Typography variant="h6" sx={{ wordBreak: "break-word" }}>Invoices — {selected.full_name}</Typography>
             {!isPlatformAdmin && (
               <Button size="small" variant="contained" startIcon={<AddIcon />}
                 onClick={() => setInvoiceFor(selected)}>

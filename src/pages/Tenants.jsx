@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  Box, Typography, Button, Card, Stack, Dialog, DialogTitle, DialogContent,
+  Box, Typography, Button, Card, Stack, DialogTitle, DialogContent,
   DialogActions, TextField, Alert, Snackbar, Chip,
 } from "@mui/material";
+import Dialog from "../components/ResponsiveDialog";
 import { DataGrid } from "@mui/x-data-grid";
 import AddBusinessIcon from "@mui/icons-material/AddBusiness";
 import dayjs from "dayjs";
@@ -39,7 +40,8 @@ export default function Tenants() {
 
   return (
     <Box>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+      <Stack direction={{ xs: "column", sm: "row" }} alignItems={{ xs: "flex-start", sm: "center" }}
+        justifyContent="space-between" spacing={{ xs: 1.5, sm: 0 }} sx={{ mb: 2 }}>
         <Box>
           <Typography variant="h4">Tenants</Typography>
           <Typography variant="body2" color="text.secondary">

@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import {
-  Box, Typography, Card, CardContent, Stack, Button, TextField, Dialog, DialogTitle,
+  Box, Typography, Card, CardContent, Stack, Button, TextField, DialogTitle,
   DialogContent, DialogActions, IconButton, Chip, FormControlLabel, Switch, Snackbar,
 } from "@mui/material";
+import Dialog from "../components/ResponsiveDialog";
 import AddIcon from "@mui/icons-material/Add";
 import PushPinIcon from "@mui/icons-material/PushPin";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
@@ -52,7 +53,8 @@ export default function Announcements() {
 
   return (
     <Box>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+      <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between"
+        alignItems={{ xs: "flex-start", sm: "center" }} spacing={{ xs: 1.5, sm: 0 }} sx={{ mb: 2 }}>
         <Box>
           <Typography variant="h4">Announcements</Typography>
           <Typography variant="body2" color="text.secondary">Notices shown in the customer app.</Typography>

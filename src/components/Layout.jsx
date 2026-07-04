@@ -51,7 +51,7 @@ export default function Layout() {
   const nav = useNavigate();
   const loc = useLocation();
   const { profile, isAdmin, isPlatformAdmin, signOut } = useAuth();
-  const { tenantId, setTenantId, tenants } = useTenant();
+  const { tenantId, setTenantId, tenants, tenantName } = useTenant();
 
   const items = isPlatformAdmin
     ? NAV.filter((n) => !n.platformOnly || n.to === "/tenants")
@@ -65,7 +65,10 @@ export default function Layout() {
           <WaterDropIcon fontSize="small" />
         </Box>
         <Box>
-          <Typography variant="subtitle1" fontWeight={800} lineHeight={1}>AquaFlow</Typography>
+          <Typography variant="subtitle1" fontWeight={800} lineHeight={1}
+            sx={{ maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {tenantName || "AquaFlow"}
+          </Typography>
           <Typography variant="caption" color="text.secondary">RO Water Ops</Typography>
         </Box>
       </Toolbar>
@@ -107,7 +110,7 @@ export default function Layout() {
           )}
           <Box sx={{ flex: 1 }} />
           {isPlatformAdmin && tenants.length > 0 && (
-            <FormControl size="small" sx={{ minWidth: 200, mr: 2 }}>
+            <FormControl size="small" sx={{ minWidth: { xs: 130, sm: 200 }, maxWidth: { xs: 160, sm: "none" }, mr: { xs: 1, sm: 2 } }}>
               <Select
                 value={tenantId ?? ""}
                 onChange={(e) => setTenantId(e.target.value)}
@@ -128,7 +131,8 @@ export default function Layout() {
             </FormControl>
           )}
           <Chip size="small" color="primary" variant="outlined"
-            label={ROLE_LABEL[profile?.role] ?? "Staff"} sx={{ mr: 1.5, fontWeight: 600 }} />
+            label={ROLE_LABEL[profile?.role] ?? "Staff"}
+            sx={{ mr: 1.5, fontWeight: 600, display: { xs: "none", sm: "inline-flex" } }} />
           <IconButton onClick={(e) => setAnchor(e.currentTarget)} size="small">
             <Avatar sx={{ width: 34, height: 34, bgcolor: "primary.main", fontSize: 15 }}>
               {(profile?.full_name ?? "?").charAt(0).toUpperCase()}

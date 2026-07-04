@@ -31,8 +31,8 @@ export default function Login() {
               borderRadius: 3, bgcolor: "primary.main", color: "#fff" }}>
               <WaterDropIcon />
             </Box>
-            <Typography variant="h5">AquaFlow Admin</Typography>
-            <Typography variant="body2" color="text.secondary">Sign in to manage your RO service</Typography>
+            <Typography variant="h5">Admin Portal</Typography>
+            <Typography variant="body2" color="text.secondary">Sign in to manage your water service</Typography>
           </Stack>
 
           {err && <Alert severity="error" sx={{ mb: 2 }}>{err}</Alert>}

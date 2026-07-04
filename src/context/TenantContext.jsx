@@ -6,10 +6,26 @@ const TenantCtx = createContext(null);
 export const useTenant = () => useContext(TenantCtx);
 
 export function TenantProvider({ children }) {
-  const { isPlatformAdmin, loading: authLoading } = useAuth();
+  const { profile, isPlatformAdmin, loading: authLoading } = useAuth();
   const [tenants, setTenants] = useState([]);
   const [tenantId, setTenantId] = useState(null);
+  const [tenantName, setTenantName] = useState("");
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (isPlatformAdmin) {
+      const selected = tenants.find((t) => t.id === tenantId);
+      setTenantName(selected?.name ?? "AquaFlow Platform");
+      return;
+    }
+    if (!profile?.tenant_id) return;
+    supabase
+      .from("tenants")
+      .select("name")
+      .eq("id", profile.tenant_id)
+      .single()
+      .then(({ data }) => setTenantName(data?.name ?? "AquaFlow"));
+  }, [tenantId, tenants, profile?.tenant_id, isPlatformAdmin]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -32,7 +48,7 @@ export function TenantProvider({ children }) {
   }, [isPlatformAdmin, authLoading]);
 
   return (
-    <TenantCtx.Provider value={{ tenantId, setTenantId, tenants, loading }}>
+    <TenantCtx.Provider value={{ tenantId, setTenantId, tenants, loading, tenantName }}>
       {children}
     </TenantCtx.Provider>
   );

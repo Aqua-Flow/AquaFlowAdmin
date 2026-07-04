@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  Box, Typography, Card, Stack, Button, Dialog, DialogTitle, DialogContent,
+  Box, Typography, Card, Stack, Button, DialogTitle, DialogContent,
   DialogActions, TextField, MenuItem, Alert, Chip, IconButton, Tooltip, Snackbar,
 } from "@mui/material";
+import Dialog from "../components/ResponsiveDialog";
 import { DataGrid } from "@mui/x-data-grid";
 import AddIcon from "@mui/icons-material/PersonAdd";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
@@ -66,7 +67,8 @@ export default function Staff() {
 
   return (
     <Box>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+      <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between"
+        alignItems={{ xs: "flex-start", sm: "center" }} spacing={{ xs: 1.5, sm: 0 }} sx={{ mb: 2 }}>
         <Box>
           <Typography variant="h4">Staff</Typography>
           <Typography variant="body2" color="text.secondary">Admins and delivery staff.</Typography>
