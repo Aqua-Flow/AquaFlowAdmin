@@ -1,0 +1,17 @@
+# Netlify config for the AquaFlow admin site.
+# If you connect the whole repo in the Netlify UI, set Base directory = "admin".
+# If you deploy from the admin/ folder via CLI, this file is picked up as-is.
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# React Router uses client-side routing (BrowserRouter). Without this rule,
+# refreshing /customers or deep links would 404. Send everything to index.html.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in the Netlify UI under
+# Site settings -> Environment variables (they're read at build time by Vite).
