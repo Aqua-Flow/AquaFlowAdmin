@@ -1,4 +1,5 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { useEffect } from "react";
+import { Routes, Route, useNavigate } from "react-router-dom";
 import { Box, CircularProgress } from "@mui/material";
 import { useAuth } from "./context/AuthContext";
 import Layout from "./components/Layout";
@@ -21,33 +22,74 @@ function Splash() {
   );
 }
 
+function Redirect({ to }) {
+  const navigate = useNavigate();
+  useEffect(() => { navigate(to, { replace: true }); }, [navigate, to]);
+  return null;
+}
+
 function Guard({ children, admin, platform, shell }) {
   const { session, loading, isStaff, isAdmin, isPlatformAdmin } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (loading) return;
+    if (!session || (!isStaff && !isPlatformAdmin)) {
+      navigate("/login", { replace: true });
+      return;
+    }
+    if (shell) return;
+    if (platform && !isPlatformAdmin) {
+      navigate("/", { replace: true });
+      return;
+    }
+    if (!platform && isPlatformAdmin) {
+      navigate("/tenants", { replace: true });
+      return;
+    }
+    if (admin && !isAdmin) {
+      navigate("/", { replace: true });
+    }
+  }, [loading, session, isStaff, isAdmin, isPlatformAdmin, platform, admin, shell, navigate]);
+
   if (loading) return <Splash />;
-  if (!session) return <Navigate to="/login" replace />;
-  if (!isStaff && !isPlatformAdmin) return <Navigate to="/login" replace />;
-  // The app shell only needs a logged-in user; per-page guards do the rest.
+  if (!session || (!isStaff && !isPlatformAdmin)) return null;
   if (shell) return children;
-  // platform-only page (Tenants): only the platform admin
-  if (platform && !isPlatformAdmin) return <Navigate to="/" replace />;
-  // tenant pages: keep the platform admin out, send them to Tenants
-  if (!platform && isPlatformAdmin) return <Navigate to="/tenants" replace />;
-  if (admin && !isAdmin) return <Navigate to="/" replace />;
+  if (platform && !isPlatformAdmin) return null;
+  if (!platform && isPlatformAdmin) return null;
+  if (admin && !isAdmin) return null;
   return children;
 }
 
 function Home() {
   const { isPlatformAdmin } = useAuth();
-  return isPlatformAdmin ? <Navigate to="/tenants" replace /> : <Dashboard />;
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isPlatformAdmin) {
+      navigate("/tenants", { replace: true });
+    }
+  }, [isPlatformAdmin, navigate]);
+
+  if (isPlatformAdmin) return null;
+  return <Dashboard />;
 }
 
 export default function App() {
   const { session, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && session) {
+      // no-op: just here to prevent any initial flash redirect
+    }
+  }, [loading, session, navigate]);
+
   if (loading) return <Splash />;
 
   return (
     <Routes>
-      <Route path="/login" element={session ? <Navigate to="/" replace /> : <Login />} />
+      <Route path="/login" element={session ? <Redirect to="/" /> : <Login />} />
       <Route
         element={
           <Guard shell>
@@ -65,7 +107,7 @@ export default function App() {
         <Route path="/staff" element={<Guard admin><Staff /></Guard>} />
         <Route path="/settings" element={<Guard admin><Settings /></Guard>} />
       </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<Redirect to="/" />} />
     </Routes>
   );
 }
