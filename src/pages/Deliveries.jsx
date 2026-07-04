@@ -9,28 +9,40 @@ import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import * as XLSX from "xlsx";
 import { supabase } from "../lib/supabase";
+import { useAuth } from "../context/AuthContext";
+import { useTenant } from "../context/TenantContext";
 
 const statusColor = { matched: "success", mismatch: "warning", unconfirmed: "info", disputed: "error" };
 const todayStr = () => new Date().toISOString().slice(0, 10);
 
 export default function Deliveries() {
+  const { isPlatformAdmin } = useAuth();
+  const { tenantId } = useTenant();
   const [date, setDate] = useState(todayStr());
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState("");
 
+  function addTenantFilter(query, isPlatformAdmin, tenantId) {
+    return isPlatformAdmin && tenantId ? query.eq("tenant_id", tenantId) : query;
+  }
+
   async function load() {
     setLoading(true);
     // all customers
-    const { data: customers } = await supabase
+    let q1 = supabase
       .from("profiles").select("id, full_name, phone").eq("role", "customer").eq("active", true)
       .order("full_name");
+    q1 = addTenantFilter(q1, isPlatformAdmin, tenantId);
+    const { data: customers } = await q1;
 
     // reconciliation rows for the date
-    const { data: recon } = await supabase
+    let q2 = supabase
       .from("reconciliation")
       .select("customer_id, jars_delivered, jars_confirmed, received, status")
       .eq("day", date);
+    q2 = addTenantFilter(q2, isPlatformAdmin, tenantId);
+    const { data: recon } = await q2;
 
     const reconBy = Object.fromEntries((recon ?? []).map((r) => [r.customer_id, r]));
     const merged = (customers ?? []).map((c) => {
@@ -47,7 +59,7 @@ export default function Deliveries() {
     setLoading(false);
   }
 
-  useEffect(() => { load(); }, [date]);
+  useEffect(() => { load(); }, [date, tenantId]);
 
   async function logDelivery(customerId, jars) {
     if (jars < 0) return;
@@ -80,7 +92,7 @@ export default function Deliveries() {
       field: "jars_delivered", headerName: "Delivered (staff)", width: 190,
       renderCell: (p) => (
         <Stack direction="row" alignItems="center" spacing={0.5}>
-          {isToday && (
+          {isToday && !isPlatformAdmin && (
             <IconButton size="small" disabled={!p.row.logged || (p.value ?? 0) <= 0}
               onClick={() => logDelivery(p.row.id, (p.value ?? 0) - 1)}>
               <RemoveIcon fontSize="inherit" />
@@ -88,7 +100,7 @@ export default function Deliveries() {
           )}
           <Chip size="small" variant="outlined"
             label={p.value == null ? "—" : `${p.value} jar${p.value === 1 ? "" : "s"}`} />
-          {isToday && (
+          {isToday && !isPlatformAdmin && (
             <IconButton size="small" color="primary"
               onClick={() => logDelivery(p.row.id, (p.value ?? 0) + 1)}>
               <AddIcon fontSize="inherit" />
@@ -110,7 +122,7 @@ export default function Deliveries() {
           sx={{ textTransform: "capitalize" }} />
       ),
     },
-  ], [isToday, rows]);
+  ], [isToday, rows, isPlatformAdmin]);
 
   return (
     <Box>

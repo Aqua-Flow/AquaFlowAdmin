@@ -10,26 +10,36 @@ import CurrencyRupeeIcon from "@mui/icons-material/CurrencyRupee";
 import SupportAgentIcon from "@mui/icons-material/SupportAgent";
 import StatCard from "../components/StatCard";
 import { supabase } from "../lib/supabase";
+import { useAuth } from "../context/AuthContext";
+import { useTenant } from "../context/TenantContext";
 
 const reconColor = { matched: "success", mismatch: "warning", unconfirmed: "default", disputed: "error" };
 
 export default function Dashboard() {
+  const { isPlatformAdmin } = useAuth();
+  const { tenantId } = useTenant();
   const [stats, setStats] = useState(null);
   const [recon, setRecon] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  function addTenantFilter(query, isPlatformAdmin, tenantId) {
+    return isPlatformAdmin && tenantId ? query.eq("tenant_id", tenantId) : query;
+  }
+
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.rpc("get_dashboard_stats");
+      const { data } = await supabase.rpc("get_dashboard_stats", { p_tenant_id: tenantId });
       setStats(data);
 
       const today = new Date().toISOString().slice(0, 10);
-      const { data: r } = await supabase
+      let q = supabase
         .from("reconciliation")
         .select("customer_id, day, jars_delivered, jars_confirmed, status")
         .eq("day", today)
         .in("status", ["mismatch", "disputed"])
         .limit(8);
+      q = addTenantFilter(q, isPlatformAdmin, tenantId);
+      const { data: r } = await q;
 
       // hydrate names
       let rows = r ?? [];
@@ -42,7 +52,7 @@ export default function Dashboard() {
       setRecon(rows);
       setLoading(false);
     })();
-  }, []);
+  }, [tenantId]);
 
   const s = stats ?? {};
 

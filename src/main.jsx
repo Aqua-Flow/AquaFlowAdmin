@@ -7,6 +7,7 @@ import "@fontsource/inter/600.css";
 import "@fontsource/inter/700.css";
 import theme from "./theme";
 import { AuthProvider } from "./context/AuthContext";
+import { TenantProvider } from "./context/TenantContext";
 import App from "./App";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
@@ -14,7 +15,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     <CssBaseline />
     <BrowserRouter>
       <AuthProvider>
-        <App />
+        <TenantProvider>
+          <App />
+        </TenantProvider>
       </AuthProvider>
     </BrowserRouter>
   </ThemeProvider>

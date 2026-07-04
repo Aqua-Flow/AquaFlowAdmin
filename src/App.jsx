@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import { Box, CircularProgress } from "@mui/material";
+import { Box, Button, CircularProgress, Typography } from "@mui/material";
 import { useAuth } from "./context/AuthContext";
+import { useTenant } from "./context/TenantContext";
 import Layout from "./components/Layout";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -21,22 +22,39 @@ function Splash() {
   );
 }
 
+function NoAccess() {
+  const { signOut } = useAuth();
+  return (
+    <Box sx={{ height: "100vh", display: "grid", placeItems: "center", textAlign: "center" }}>
+      <Box>
+        <Typography variant="h6" gutterBottom>
+          Your account doesn&apos;t have access to this app.
+        </Typography>
+        <Button variant="contained" onClick={signOut}>
+          Sign out
+        </Button>
+      </Box>
+    </Box>
+  );
+}
+
 function Guard({ children, admin, platform, shell }) {
-  const { session, loading, isStaff, isAdmin, isPlatformAdmin } = useAuth();
+  const { session, loading, profile, isStaff, isAdmin, isPlatformAdmin } = useAuth();
 
   if (loading) return <Splash />;
-  if (!session || (!isStaff && !isPlatformAdmin)) return <Navigate to="/login" replace />;
+  if (!session) return <Navigate to="/login" replace />;
+  if (!profile || (!isStaff && !isPlatformAdmin)) return <NoAccess />;
   if (shell) return children;
   if (platform && !isPlatformAdmin) return <Navigate to="/" replace />;
-  if (!platform && isPlatformAdmin) return <Navigate to="/tenants" replace />;
   if (admin && !isAdmin) return <Navigate to="/" replace />;
   return children;
 }
 
 function Home() {
   const { isPlatformAdmin } = useAuth();
+  const { tenantId } = useTenant();
 
-  if (isPlatformAdmin) return <Navigate to="/tenants" replace />;
+  if (isPlatformAdmin && !tenantId) return <Splash />;
   return <Dashboard />;
 }
 

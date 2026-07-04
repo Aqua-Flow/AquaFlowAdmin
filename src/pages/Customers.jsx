@@ -10,10 +10,12 @@ import CurrencyRupeeIcon from "@mui/icons-material/CurrencyRupee";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { supabase, invokeFn } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
+import { useTenant } from "../context/TenantContext";
 import UpiQrDialog from "../components/UpiQrDialog";
 
 export default function Customers() {
-  const { profile, isAdmin } = useAuth();
+  const { profile, isAdmin, isPlatformAdmin } = useAuth();
+  const { tenantId } = useTenant();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
@@ -22,13 +24,19 @@ export default function Customers() {
   const [priceFor, setPriceFor] = useState(null);
   const [toast, setToast] = useState("");
 
+  function addTenantFilter(query, isPlatformAdmin, tenantId) {
+    return isPlatformAdmin && tenantId ? query.eq("tenant_id", tenantId) : query;
+  }
+
   async function load() {
     setLoading(true);
-    const { data } = await supabase
+    let q = supabase
       .from("profiles")
       .select("id, full_name, phone, address, active, created_at")
       .eq("role", "customer")
       .order("created_at", { ascending: false });
+    q = addTenantFilter(q, isPlatformAdmin, tenantId);
+    const { data } = await q;
 
     // pull each customer's latest subscription to show the effective price
     let customers = data ?? [];
@@ -59,7 +67,7 @@ export default function Customers() {
     setBranch(data);
   }
 
-  useEffect(() => { load(); loadBranch(); }, [profile?.branch_id]);
+  useEffect(() => { load(); loadBranch(); }, [profile?.branch_id, tenantId]);
 
   async function offboard(id, name) {
     if (!confirm(`Permanently remove ${name}? This deletes all their data.`)) return;
@@ -103,7 +111,7 @@ export default function Customers() {
     },
     {
       field: "actions", headerName: "", width: 130, sortable: false, filterable: false,
-      renderCell: (p) => (
+      renderCell: (p) => isPlatformAdmin ? null : (
         <Stack direction="row">
           <Tooltip title="Show UPI QR">
             <IconButton size="small" onClick={() => setQrFor(p.row)}><QrCode2Icon fontSize="small" /></IconButton>
@@ -125,7 +133,7 @@ export default function Customers() {
         </Stack>
       ),
     },
-  ], [isAdmin, branch]);
+  ], [isAdmin, branch, isPlatformAdmin]);
 
   return (
     <Box>
@@ -134,9 +142,11 @@ export default function Customers() {
           <Typography variant="h4">Customers</Typography>
           <Typography variant="body2" color="text.secondary">{rows.length} total</Typography>
         </Box>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setAddOpen(true)}>
-          Add customer
-        </Button>
+        {!isPlatformAdmin && (
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setAddOpen(true)}>
+            Add customer
+          </Button>
+        )}
       </Stack>
 
       <Card>

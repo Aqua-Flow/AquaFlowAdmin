@@ -11,10 +11,12 @@ import * as XLSX from "xlsx";
 import dayjs from "dayjs";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
+import { useTenant } from "../context/TenantContext";
 import UpiQrDialog from "../components/UpiQrDialog";
 
 export default function Payments() {
-  const { profile } = useAuth();
+  const { profile, isPlatformAdmin } = useAuth();
+  const { tenantId } = useTenant();
   const [rows, setRows] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,17 +25,25 @@ export default function Payments() {
   const [branch, setBranch] = useState(null);
   const [toast, setToast] = useState("");
 
+  function addTenantFilter(query, isPlatformAdmin, tenantId) {
+    return isPlatformAdmin && tenantId ? query.eq("tenant_id", tenantId) : query;
+  }
+
   async function load() {
     setLoading(true);
-    const { data } = await supabase
+    let q = supabase
       .from("payments")
       .select("id, amount, method, paid_on, upi_ref, customer_id, profiles!payments_customer_id_fkey(full_name)")
       .order("paid_on", { ascending: false })
       .limit(200);
+    q = addTenantFilter(q, isPlatformAdmin, tenantId);
+    const { data } = await q;
     setRows((data ?? []).map((r) => ({ ...r, name: r.profiles?.full_name ?? "—" })));
 
-    const { data: cust } = await supabase
+    let qCust = supabase
       .from("profiles").select("id, full_name").eq("role", "customer").order("full_name");
+    qCust = addTenantFilter(qCust, isPlatformAdmin, tenantId);
+    const { data: cust } = await qCust;
     setCustomers(cust ?? []);
 
     if (profile?.branch_id) {
@@ -44,7 +54,7 @@ export default function Payments() {
     setLoading(false);
   }
 
-  useEffect(() => { load(); }, [profile?.branch_id]);
+  useEffect(() => { load(); }, [profile?.branch_id, tenantId]);
 
   function exportXlsx() {
     const ws = XLSX.utils.json_to_sheet(rows.map((r) => ({
@@ -79,9 +89,11 @@ export default function Payments() {
         <Stack direction="row" spacing={1}>
           <Button variant="outlined" startIcon={<QrCode2Icon />} onClick={() => setQrOpen(true)}>UPI QR</Button>
           <Button variant="outlined" startIcon={<DownloadIcon />} onClick={exportXlsx}>Export</Button>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setRecOpen(true)}>
-            Record payment
-          </Button>
+          {!isPlatformAdmin && (
+            <Button variant="contained" startIcon={<AddIcon />} onClick={() => setRecOpen(true)}>
+              Record payment
+            </Button>
+          )}
         </Stack>
       </Stack>
 

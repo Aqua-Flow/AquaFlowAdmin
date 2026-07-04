@@ -3,7 +3,7 @@ import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
   AppBar, Box, Drawer, IconButton, List, ListItemButton, ListItemIcon,
   ListItemText, Toolbar, Typography, Divider, Avatar, Menu, MenuItem, Chip,
-  useMediaQuery,
+  Select, FormControl, useMediaQuery,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import MenuIcon from "@mui/icons-material/Menu";
@@ -18,6 +18,7 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import ApartmentIcon from "@mui/icons-material/Apartment";
 import WaterDropIcon from "@mui/icons-material/WaterDrop";
 import { useAuth } from "../context/AuthContext";
+import { useTenant } from "../context/TenantContext";
 
 const drawerWidth = 248;
 
@@ -48,10 +49,11 @@ export default function Layout() {
   const nav = useNavigate();
   const loc = useLocation();
   const { profile, isAdmin, isPlatformAdmin, signOut } = useAuth();
+  const { tenantId, setTenantId, tenants } = useTenant();
 
-  const items = NAV.filter((n) =>
-    isPlatformAdmin ? n.platformOnly : !n.platformOnly && (!n.admin || isAdmin)
-  );
+  const items = isPlatformAdmin
+    ? NAV.filter((n) => !n.platformOnly || n.to === "/tenants")
+    : NAV.filter((n) => !n.platformOnly && (!n.admin || isAdmin));
 
   const drawer = (
     <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
@@ -102,6 +104,27 @@ export default function Layout() {
             </IconButton>
           )}
           <Box sx={{ flex: 1 }} />
+          {isPlatformAdmin && tenants.length > 0 && (
+            <FormControl size="small" sx={{ minWidth: 200, mr: 2 }}>
+              <Select
+                value={tenantId ?? ""}
+                onChange={(e) => setTenantId(e.target.value)}
+                displayEmpty
+                sx={{ fontSize: 14, bgcolor: "background.default" }}
+              >
+                {tenants.map((t) => (
+                  <MenuItem key={t.id} value={t.id}>
+                    {t.name}
+                    {!t.active && (
+                      <Box component="span" sx={{ ml: 1, fontSize: 11, color: "text.secondary" }}>
+                        (suspended)
+                      </Box>
+                    )}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
           <Chip size="small" color="primary" variant="outlined"
             label={ROLE_LABEL[profile?.role] ?? "Staff"} sx={{ mr: 1.5, fontWeight: 600 }} />
           <IconButton onClick={(e) => setAnchor(e.currentTarget)} size="small">

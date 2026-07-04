@@ -8,28 +8,36 @@ import AddIcon from "@mui/icons-material/PersonAdd";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { supabase, invokeFn } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
+import { useTenant } from "../context/TenantContext";
 
 const ROLE_LABEL = { super_admin: "Super Admin", admin: "Admin", lower_admin: "Delivery" };
 const ROLE_COLOR = { super_admin: "error", admin: "primary", lower_admin: "secondary" };
 
 export default function Staff() {
-  const { isSuperAdmin } = useAuth();
+  const { isSuperAdmin, isPlatformAdmin } = useAuth();
+  const { tenantId } = useTenant();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
   const [toast, setToast] = useState("");
 
+  function addTenantFilter(query, isPlatformAdmin, tenantId) {
+    return isPlatformAdmin && tenantId ? query.eq("tenant_id", tenantId) : query;
+  }
+
   async function load() {
     setLoading(true);
-    const { data } = await supabase
+    let q = supabase
       .from("profiles")
       .select("id, full_name, phone, role, created_at")
       .in("role", ["super_admin", "admin", "lower_admin"])
       .order("created_at", { ascending: false });
+    q = addTenantFilter(q, isPlatformAdmin, tenantId);
+    const { data } = await q;
     setRows(data ?? []);
     setLoading(false);
   }
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [tenantId]);
 
   async function offboard(id, name) {
     if (!confirm(`Remove ${name}?`)) return;
@@ -46,7 +54,7 @@ export default function Staff() {
     },
     {
       field: "actions", headerName: "", width: 70, sortable: false, filterable: false,
-      renderCell: (p) => p.row.role !== "super_admin" && (
+      renderCell: (p) => !isPlatformAdmin && p.row.role !== "super_admin" && (
         <Tooltip title="Offboard">
           <IconButton size="small" color="error" onClick={() => offboard(p.row.id, p.row.full_name)}>
             <DeleteOutlineIcon fontSize="small" />
@@ -54,7 +62,7 @@ export default function Staff() {
         </Tooltip>
       ),
     },
-  ], []);
+  ], [isPlatformAdmin]);
 
   return (
     <Box>
@@ -63,7 +71,9 @@ export default function Staff() {
           <Typography variant="h4">Staff</Typography>
           <Typography variant="body2" color="text.secondary">Admins and delivery staff.</Typography>
         </Box>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setAddOpen(true)}>Add staff</Button>
+        {(!isPlatformAdmin || tenantId) && (
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setAddOpen(true)}>Add staff</Button>
+        )}
       </Stack>
 
       <Card>
@@ -74,6 +84,7 @@ export default function Staff() {
       </Card>
 
       <AddStaffDialog open={addOpen} onClose={() => setAddOpen(false)} isSuperAdmin={isSuperAdmin}
+        isPlatformAdmin={isPlatformAdmin} tenantId={tenantId}
         onDone={() => { setAddOpen(false); setToast("Staff added"); load(); }} />
 
       <Snackbar open={!!toast} autoHideDuration={3000} onClose={() => setToast("")} message={toast} />
@@ -81,7 +92,7 @@ export default function Staff() {
   );
 }
 
-function AddStaffDialog({ open, onClose, isSuperAdmin, onDone }) {
+function AddStaffDialog({ open, onClose, isSuperAdmin, isPlatformAdmin, tenantId, onDone }) {
   const [form, setForm] = useState({ full_name: "", email: "", phone: "", role: "lower_admin" });
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -95,6 +106,7 @@ function AddStaffDialog({ open, onClose, isSuperAdmin, onDone }) {
     try {
       const res = await invokeFn("onboard-staff", {
         full_name: form.full_name, email: form.email, phone: form.phone, role: form.role,
+        ...(isPlatformAdmin ? { tenant_id: tenantId } : {}),
       });
       setPwd(res.default_password);
     } catch (e) { setErr(e.message); } finally { setBusy(false); }
@@ -114,9 +126,10 @@ function AddStaffDialog({ open, onClose, isSuperAdmin, onDone }) {
             <TextField label="Phone" value={form.phone} onChange={set("phone")} />
             <TextField select label="Role" value={form.role} onChange={set("role")}>
               <MenuItem value="lower_admin">Delivery staff</MenuItem>
-              {isSuperAdmin && <MenuItem value="admin">Admin</MenuItem>}
+              {(isSuperAdmin || isPlatformAdmin) && <MenuItem value="admin">Admin</MenuItem>}
+              {isPlatformAdmin && <MenuItem value="super_admin">Super Admin</MenuItem>}
             </TextField>
-            {!isSuperAdmin && (
+            {!isSuperAdmin && !isPlatformAdmin && (
               <Typography variant="caption" color="text.secondary">
                 Only a Super Admin can create Admins.
               </Typography>

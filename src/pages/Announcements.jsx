@@ -9,23 +9,31 @@ import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import dayjs from "dayjs";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
+import { useTenant } from "../context/TenantContext";
 
 export default function Announcements() {
-  const { profile } = useAuth();
+  const { profile, isPlatformAdmin } = useAuth();
+  const { tenantId } = useTenant();
   const [rows, setRows] = useState([]);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ title: "", body: "", pinned: false });
   const [toast, setToast] = useState("");
 
+  function addTenantFilter(query, isPlatformAdmin, tenantId) {
+    return isPlatformAdmin && tenantId ? query.eq("tenant_id", tenantId) : query;
+  }
+
   async function load() {
-    const { data } = await supabase
+    let q = supabase
       .from("announcements")
       .select("id, title, body, pinned, created_at")
       .order("pinned", { ascending: false })
       .order("created_at", { ascending: false });
+    q = addTenantFilter(q, isPlatformAdmin, tenantId);
+    const { data } = await q;
     setRows(data ?? []);
   }
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [tenantId]);
 
   async function create() {
     const { error } = await supabase.from("announcements").insert({
@@ -49,7 +57,9 @@ export default function Announcements() {
           <Typography variant="h4">Announcements</Typography>
           <Typography variant="body2" color="text.secondary">Notices shown in the customer app.</Typography>
         </Box>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setOpen(true)}>New notice</Button>
+        {!isPlatformAdmin && (
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setOpen(true)}>New notice</Button>
+        )}
       </Stack>
 
       <Stack spacing={1.5}>
@@ -70,7 +80,9 @@ export default function Announcements() {
                     {dayjs(a.created_at).format("DD MMM YYYY, HH:mm")}
                   </Typography>
                 </Box>
-                <IconButton color="error" onClick={() => remove(a.id)}><DeleteOutlineIcon /></IconButton>
+                {!isPlatformAdmin && (
+                  <IconButton color="error" onClick={() => remove(a.id)}><DeleteOutlineIcon /></IconButton>
+                )}
               </Stack>
             </CardContent>
           </Card>

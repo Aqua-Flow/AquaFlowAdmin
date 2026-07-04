@@ -5,6 +5,8 @@ import {
 } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { supabase } from "../lib/supabase";
+import { useAuth } from "../context/AuthContext";
+import { useTenant } from "../context/TenantContext";
 import dayjs from "dayjs";
 
 const TYPE_LABEL = {
@@ -18,10 +20,16 @@ const STATUS_COLOR = {
 };
 
 export default function Requests() {
+  const { isPlatformAdmin } = useAuth();
+  const { tenantId } = useTenant();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("open");
   const [toast, setToast] = useState("");
+
+  function addTenantFilter(query, isPlatformAdmin, tenantId) {
+    return isPlatformAdmin && tenantId ? query.eq("tenant_id", tenantId) : query;
+  }
 
   async function load() {
     setLoading(true);
@@ -29,6 +37,7 @@ export default function Requests() {
       .from("requests")
       .select("id, type, quantity, note, status, created_at, customer_id, profiles!requests_customer_id_fkey(full_name, phone)")
       .order("created_at", { ascending: false });
+    q = addTenantFilter(q, isPlatformAdmin, tenantId);
     if (filter === "open") q = q.in("status", ["pending", "assigned", "in_progress"]);
     if (filter === "done") q = q.in("status", ["completed", "rejected"]);
     const { data } = await q;
@@ -40,7 +49,7 @@ export default function Requests() {
     setLoading(false);
   }
 
-  useEffect(() => { load(); }, [filter]);
+  useEffect(() => { load(); }, [filter, tenantId]);
 
   async function setStatus(id, status) {
     const patch = { status };
@@ -66,7 +75,10 @@ export default function Requests() {
     },
     {
       field: "status", headerName: "Status", width: 170, sortable: false,
-      renderCell: (p) => (
+      renderCell: (p) => isPlatformAdmin ? (
+        <Chip size="small" color={STATUS_COLOR[p.value]} label={p.value.replace("_", " ")}
+          sx={{ textTransform: "capitalize" }} />
+      ) : (
         <Select size="small" value={p.value} variant="standard" disableUnderline
           onChange={(e) => setStatus(p.row.id, e.target.value)}
           renderValue={(v) => <Chip size="small" color={STATUS_COLOR[v]} label={v.replace("_", " ")}
@@ -78,7 +90,7 @@ export default function Requests() {
         </Select>
       ),
     },
-  ], []);
+  ], [isPlatformAdmin]);
 
   return (
     <Box>

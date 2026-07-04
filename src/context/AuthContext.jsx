@@ -10,24 +10,24 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   async function loadProfile(userId) {
-    if (!userId) return setProfile(null);
+    if (!userId) return null;
     const { data } = await supabase
       .from("profiles")
       .select("id, full_name, role, branch_id, tenant_id, phone")
       .eq("id", userId)
       .single();
-    setProfile(data ?? null);
+    return data ?? null;
   }
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
+      setProfile(await loadProfile(data.session?.user?.id));
       setSession(data.session);
-      await loadProfile(data.session?.user?.id);
       setLoading(false);
     });
     const { data: sub } = supabase.auth.onAuthStateChange(async (_e, s) => {
+      setProfile(await loadProfile(s?.user?.id));
       setSession(s);
-      await loadProfile(s?.user?.id);
     });
     return () => sub.subscription.unsubscribe();
   }, []);
