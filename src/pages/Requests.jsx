@@ -22,14 +22,17 @@ const STATUS_COLOR = {
 export default function Requests() {
   const { isPlatformAdmin } = useAuth();
   const { tenantId } = useTenant();
+  const [branchId, setBranchId] = useState(null);
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("open");
   const [toast, setToast] = useState("");
 
-  function addTenantFilter(query, isPlatformAdmin, tenantId) {
-    return isPlatformAdmin && tenantId ? query.eq("tenant_id", tenantId) : query;
-  }
+  useEffect(() => {
+    if (!tenantId) return;
+    supabase.from("branches").select("id").eq("tenant_id", tenantId).limit(1)
+      .then(({ data }) => setBranchId(data?.[0]?.id ?? null));
+  }, [tenantId]);
 
   async function load() {
     setLoading(true);
@@ -37,9 +40,11 @@ export default function Requests() {
       .from("requests")
       .select("id, type, quantity, note, status, created_at, customer_id, profiles!requests_customer_id_fkey(full_name, phone)")
       .order("created_at", { ascending: false });
-    q = addTenantFilter(q, isPlatformAdmin, tenantId);
     if (filter === "open") q = q.in("status", ["pending", "assigned", "in_progress"]);
     if (filter === "done") q = q.in("status", ["completed", "rejected"]);
+    if (isPlatformAdmin && tenantId) {
+      q = q.or(`tenant_id.eq.${tenantId},branch_id.eq.${branchId}`);
+    }
     const { data } = await q;
     setRows((data ?? []).map((r) => ({
       ...r,
@@ -49,7 +54,7 @@ export default function Requests() {
     setLoading(false);
   }
 
-  useEffect(() => { load(); }, [filter, tenantId]);
+  useEffect(() => { load(); }, [filter, tenantId, branchId]);
 
   async function setStatus(id, status) {
     const patch = { status };
